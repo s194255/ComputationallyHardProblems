@@ -1,9 +1,33 @@
 from itertools import product
+import sys
 
 SIGMA = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
          'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 GAMMA = [x.upper() for x in SIGMA]
 
+def read_input(file_path):
+    with open(file_path, "r", encoding="ASCII") as f:
+        content = f.readlines()
+        content = [x.strip() for x in content]  # remove \n
+    return content
+
+def read_input_from_stdin():
+    content = []
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            break
+        content.append(line)
+    return content
+
+# def read_input_from_stdin():
+#     content = []
+#     for line in sys.stdin:
+#         line = line.strip()
+#         if not line:  # Skip empty lines
+#             continue
+#         content.append(line)
+#     return content
 
 def check_input(content):
     k = None
@@ -11,24 +35,35 @@ def check_input(content):
         k = int(content[0])
     except ValueError:
         return False
-    for char in content[1]:
+    except IndexError:
+        return False
+    if k < 1:
+        return False
+    try:
+        s = content[1]
+    except IndexError:
+        return False
+    for char in s:
         if char not in SIGMA:
             return False
     for i in range(2, 2+k):
-        t_k = content[i]
-        # print(t_k)
+        try:
+            t_k = content[i]
+        except IndexError:
+            return False
         for char in t_k:
             if not ((char in SIGMA) or (char in GAMMA)):
-                # print(char)
                 return False
     for i in range(2+k, len(content)):
-        r_i = content[i]
+        try:
+            r_i = content[i]
+        except IndexError:
+            return False
         if not r_i[0] in GAMMA:
             return False
         if not r_i[1] == ':':
             return False
         r_i_translations = r_i[2:].split(",")
-        # print(r_i_translations)
         for r_i_translation in r_i_translations:
             for char in r_i_translation:
                 if (char not in SIGMA) or char == '':  # TODO: check for empty char
@@ -149,20 +184,27 @@ def solve(input_dict):
     succes, sol = exhaustive_search(input_dict)
     return succes, sol
 
+def return_output(success, sol):
+    if success:
+        for key, value in sol.items():
+            print(f"{key}:{value}")
+    else:
+        print("NO")
+
 def main():
     # 1. Read input
     file_path = 'examples/test02.swe'
-    with open(file_path, "r", encoding="ASCII") as f:
-        content = f.readlines()
-        content = [x.strip() for x in content]  # remove \n
+    # content = read_input(file_path)
+    content = read_input_from_stdin()
     # 2. Check if format is correct        
     if not check_input(content):
-        print("wrongly formatted content")
+        success = False
+        sol = None
+        return_output(success, sol)
         return
     input_dict = construct_dict(content)
-    succes, sol = solve(input_dict)
-    print(succes)
-    print(sol)
+    success, sol = solve(input_dict)
+    return_output(success, sol)
 
 if __name__ == "__main__":
     main()
