@@ -13,9 +13,18 @@ def read_input(file_path):
 
 def read_input_from_stdin():
     content = []
-    for line in sys.stdin:
+    k = None
+    for i, line in enumerate(sys.stdin):
         line = line.strip()
-        if not line:
+        if k is None:
+            k = line
+            try:
+                k = int(k)
+            except ValueError:
+                break
+            if k < 0:
+                break
+        if (not line) and (i > int(k)+1):
             break
         content.append(line)
     return content
@@ -37,7 +46,7 @@ def check_input(content):
         return False
     except IndexError:
         return False
-    if k < 1:
+    if k < 0:
         return False
     try:
         s = content[1]
@@ -54,20 +63,26 @@ def check_input(content):
         for char in t_k:
             if not ((char in SIGMA) or (char in GAMMA)):
                 return False
+    gamma_chars = set([])
     for i in range(2+k, len(content)):
         try:
             r_i = content[i]
+            if not r_i[0] in GAMMA:
+                return False
+            if not r_i[1] == ':':
+                return False
         except IndexError:
             return False
-        if not r_i[0] in GAMMA:
-            return False
-        if not r_i[1] == ':':
+        if r_i[0] in gamma_chars:
             return False
         r_i_translations = r_i[2:].split(",")
+        if len(r_i_translations) != len(set(r_i_translations)):
+            return False
         for r_i_translation in r_i_translations:
             for char in r_i_translation:
                 if (char not in SIGMA) or char == '':  # TODO: check for empty char
                     return False
+        gamma_chars = gamma_chars.union(set([r_i[0]]))
     return True
 
 # {"length":,
@@ -103,7 +118,7 @@ def heu_subsequent_Gamma_appearances(input_dict):
     # The translations for GAMMA character 'A' must all be substrings of 's.' 
     # If, for example, GAMMA character 'A' appears three times in a row in one of the 't_k' strings, 
     # then its translations must also appear as substrings in 's' three times in a row. 
-    max_repats = [max([repeats(t, gamma_char) for t in input_dict['ts']]) for gamma_char in input_dict['Rs'].keys()]
+    max_repats = [max([repeats(t, gamma_char) for t in input_dict['ts']], default=0) for gamma_char in input_dict['Rs'].keys()]
     for gamma_char, max_repat in zip(input_dict["Rs"].keys(), max_repats):
         translation = input_dict["Rs"][gamma_char]
         translation = [
@@ -193,8 +208,6 @@ def return_output(success, sol):
 
 def main():
     # 1. Read input
-    file_path = 'examples/test02.swe'
-    # content = read_input(file_path)
     content = read_input_from_stdin()
     # 2. Check if format is correct        
     if not check_input(content):
